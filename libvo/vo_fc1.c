@@ -249,7 +249,7 @@ static uint32_t draw_image(mp_image_t *mpi)
 			/* Now we need to send some nice frames to the wall */
                         fcclient_sendFrame(client, frame);
 		}
-	    fprintf(dumpfile_fd, "Send data\n");
+/*	    fprintf(dumpfile_fd, "Send data Input %dx%d -> Ouptut %dx%d\n", width, height, client->width, client->height);*/
             return VO_TRUE;
         }
     }
