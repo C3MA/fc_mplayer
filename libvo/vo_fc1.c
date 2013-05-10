@@ -101,7 +101,7 @@ static int preinit(const char *arg)
 {
     const opt_t subopts[] = {
         {"outfile",     OPT_ARG_MSTRZ,    &fc_dumpfile,   NULL},
-/*        {"ip",     OPT_ARG_MSTRZ,    &fc_ip,   NULL}, */
+	{"ip",     OPT_ARG_MSTRZ,    &fc_ip,   NULL},
         {NULL, 0, NULL, NULL}
     };
 
@@ -151,6 +151,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
         exit_player(EXIT_ERROR);
     }
 
+    /* Add fullcirce stuff */
     fprintf(dumpfile_fd, "# IP %s\n", fc_ip);
     return 0;
 }
