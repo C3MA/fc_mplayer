@@ -559,6 +559,11 @@ SRCS_MPLAYER-$(MATRIXVIEW)    += libvo/vo_matrixview.c                  \
                                  libvo/matrixview.c
 SRCS_MPLAYER-$(MD5SUM)        += libvo/vo_md5sum.c
 SRCS_MPLAYER-$(FC1)           += libvo/vo_fc1.c
+# add the needed files for the library
+SRCS_MPLAYER-$(FC1)           += libvo/fc1/fc.c
+SRCS_MPLAYER-$(FC1)           += libvo/fc1/fcclient.c
+SRCS_MPLAYER-$(FC1)           += libvo/fc1/proto.c
+
 SRCS_MPLAYER-$(MGA)           += libvo/vo_mga.c
 SRCS_MPLAYER-$(MNG)           += libvo/vo_mng.c
 SRCS_MPLAYER-$(NAS)           += libao2/ao_nas.c

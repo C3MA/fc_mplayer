@@ -58,6 +58,7 @@ in config.mk
 #include "mp_core.h"			/* for exit_player() */
 #include "help_mp.h"
 
+#include "fc1/fcclient.h"
 /* ------------------------------------------------------------------------- */
 
 /* Info */
@@ -80,6 +81,9 @@ char *fc_dumpfile = NULL;
 char *fc_ip = NULL;
 
 FILE *dumpfile_fd;
+
+fcclient_t * client;
+uint8_t* frame;
 
 /* ------------------------------------------------------------------------- */
 
@@ -136,6 +140,8 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
                        uint32_t d_height, uint32_t flags, char *title,
                        uint32_t format)
 {
+    int success, success2;
+
     if (vo_config_count > 0 ) { /* Already configured */
         return 0;
     }
@@ -152,7 +158,38 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     }
 
     /* Add fullcirce stuff */
+    client = fcclient_new();
     fprintf(dumpfile_fd, "# IP %s\n", fc_ip);
+    success = fcclient_open(client, fc_ip);
+    if (!success) {
+	fprintf(dumpfile_fd, "Cannot connect to wall\n");
+	return 1;
+    }
+    else
+    {
+        do {
+                /* call this function until we were successfull in receiving something */
+                success = fcclient_processNetwork(client);
+                fprintf(dumpfile_fd, "Network: %d\n", success);
+                /*FIXME update the function using "select()" with an timeout */
+        } while (!success);
+	/* the server has answered */
+
+        success2 = fcclient_start(client);
+        fprintf(dumpfile_fd, "Start: %d\n", success2);
+	frame = malloc(client->width * client->height * 20);
+
+	printf("======== Fullcircle - Waiting for start signal ==========\n", success);
+	do
+	{
+		success = fcclient_processNetwork(client);
+		fprintf(dumpfile_fd, "Received data [%d]\n", success);
+		printf(".");
+	}
+	while (!client->connected);
+	printf("\n");
+
+    }
     return 0;
 }
 
@@ -169,8 +206,8 @@ static int draw_frame(uint8_t *src[])
 static uint32_t draw_image(mp_image_t *mpi)
 {
     unsigned char md5sum[16];
-    uint32_t w = mpi->w;
-    uint32_t h = mpi->h;
+    uint32_t width = mpi->w;
+    uint32_t height = mpi->h;
     uint8_t *rgbimage = mpi->planes[0];
     uint8_t *planeY = mpi->planes[0];
     uint8_t *planeU = mpi->planes[1];
@@ -181,18 +218,38 @@ static uint32_t draw_image(mp_image_t *mpi)
 
     unsigned int i;
 
+    /* FC variables */
+    int success, x1, y1, rgbPos;
+
     if (mpi->flags & MP_IMGFLAG_PLANAR) { /* Planar */
             return VO_FALSE;
     } else { /* Packed */
         if (mpi->flags & MP_IMGFLAG_YUV) { /* Packed YUV */
             return VO_FALSE;
         } else { /* Packed RGB */
+#if 0
 		/*FIXME here RGB of each pixel must be extracted  */
 		for(i=0; i < 3; i++)
 		{
 		    fprintf(dumpfile_fd, "%x %x %x \t", rgbimage[(i * 3) + 0], rgbimage[(i * 3) + 1], rgbimage[(i * 3) + 2] );
 		}
 		fprintf(dumpfile_fd, "\n");
+#endif
+		if (client->connected) {
+                        for (x1=0; x1 < client->width; x1++) {
+                                for (y1=0; y1 < client->height; y1++) {
+					rgbPos = (y1 * width) + x1;
+					fcclient_addPixel(client, frame, 
+						rgbimage[(rgbPos  * 3) + 0], 
+						rgbimage[(rgbPos  * 3) + 1],
+						rgbimage[(rgbPos  * 3) + 2], x1, y1);
+                                }
+                        }
+
+			/* Now we need to send some nice frames to the wall */
+                        fcclient_sendFrame(client, frame);
+		}
+	    fprintf(dumpfile_fd, "Send data\n");
             return VO_TRUE;
         }
     }
