@@ -64,9 +64,9 @@ in config.mk
 
 static const vo_info_t info=
 {
-	"fc test 1 of each frame",
+	"Output to Fullcircle (http://www.ccc-mannheim.de/wiki/Fullcircle)",
 	"fc1",
-	"NIEMAND",
+	"C3MA",
 	""
 };
 
@@ -77,9 +77,9 @@ const LIBVO_EXTERN (fc1)
 /* Global Variables */
 
 char *fc_dumpfile = NULL;
+char *fc_ip = NULL;
 
 FILE *dumpfile_fd;
-int fc1_framenum = 0;
 
 /* ------------------------------------------------------------------------- */
 
@@ -101,6 +101,7 @@ static int preinit(const char *arg)
 {
     const opt_t subopts[] = {
         {"outfile",     OPT_ARG_MSTRZ,    &fc_dumpfile,   NULL},
+/*        {"ip",     OPT_ARG_MSTRZ,    &fc_ip,   NULL}, */
         {NULL, 0, NULL, NULL}
     };
 
@@ -150,6 +151,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
         exit_player(EXIT_ERROR);
     }
 
+    fprintf(dumpfile_fd, "# IP %s\n", fc_ip);
     return 0;
 }
 
@@ -184,9 +186,12 @@ static uint32_t draw_image(mp_image_t *mpi)
         if (mpi->flags & MP_IMGFLAG_YUV) { /* Packed YUV */
             return VO_FALSE;
         } else { /* Packed RGB */
-	   // fprintf(dumpfile_fd, " \n", fc1_framenum)
 		/*FIXME here RGB of each pixel must be extracted  */
-            //av_md5_sum(md5sum /* destination */, rgbimage /* source */, mpi->w * (mpi->bpp >> 3) * mpi->h/* length */ );
+		for(i=0; i < 3; i++)
+		{
+		    fprintf(dumpfile_fd, "%x %x %x \t", rgbimage[(i * 3) + 0], rgbimage[(i * 3) + 1], rgbimage[(i * 3) + 2] );
+		}
+		fprintf(dumpfile_fd, "\n");
             return VO_TRUE;
         }
     }
