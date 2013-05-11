@@ -167,6 +167,7 @@ static int config(uint32_t width, uint32_t height, uint32_t d_width,
     }
     else
     {
+	printf("======== Fullcircle - Connecting ==========\n", success);
         do {
                 /* call this function until we were successfull in receiving something */
                 success = fcclient_processNetwork(client);
@@ -222,9 +223,35 @@ static uint32_t draw_image(mp_image_t *mpi)
     int success, x1, y1, rgbPos;
 
     if (mpi->flags & MP_IMGFLAG_PLANAR) { /* Planar */
-            return VO_FALSE;
+
+	    if (client->connected) {
+			for (y1=0; y1 < client->height; y1++) {
+				for (x1=0; x1 < client->width; x1++) {
+                                        success = (y1 * strideY) + x1;
+                                        fcclient_addPixel(client, frame,
+                                                planeY[success],
+                                                planeY[success],
+                                                planeY[success],
+                                                x1, y1);
+                                }
+                        }
+
+                        /* Now we need to send some nice frames to the wall */
+                        fcclient_sendFrame(client, frame);
+                }
+	    fprintf(dumpfile_fd, "bpp: %d:\n",  mpi->bpp);
+	    for(y1=0; y1 < height; y1++) {
+		    for(i=0; i < 32; i++) {
+		    	fprintf(dumpfile_fd, "%2X ", planeY[(y1 * strideY) + i]);
+		    }
+		    fprintf(dumpfile_fd, "\n");
+	    }
+            fprintf(dumpfile_fd, "YUV WIDTH %d, YUV  %d, %d, %d \n", width, strideY, strideU, strideV);
+	
+            return VO_TRUE;
     } else { /* Packed */
         if (mpi->flags & MP_IMGFLAG_YUV) { /* Packed YUV */
+
             return VO_FALSE;
         } else { /* Packed RGB */
 #if 0
@@ -271,7 +298,7 @@ int query_format(uint32_t format)
 {
     switch (format) {
         case IMGFMT_RGB24:
-//        case IMGFMT_YV12:
+        case IMGFMT_YV12:
             return VFCAP_CSP_SUPPORTED|VFCAP_CSP_SUPPORTED_BY_HW;
         default:
             return 0;
